@@ -12,8 +12,27 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-public class SnakePanel extends JPanel implements KeyListener,ActionListener{
-	//¼ÓÔØËùÓĞÍ¼Æ¬
+public class SnakePanel extends JPanel implements KeyListener, ActionListener {
+	// å­˜æ¡£æ•°æ®ç±»
+	public static class SaveData implements java.io.Serializable {
+		private static final long serialVersionUID = 1L;
+
+		int level;
+		int score;
+		int currentFoodCount;
+		int targetFoodCount;
+		int countdown;
+		int len;
+		String direction;
+		int[] snakex;
+		int[] snakey;
+		int foodx;
+		int foody;
+	}
+
+	// å­˜æ¡£æ–‡ä»¶è·¯å¾„
+	private final String SAVE_FILE_PATH = "snake_save.dat";
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼Æ¬
 	ImageIcon up = new ImageIcon("up.png");
 	ImageIcon down = new ImageIcon("down.png");
 	ImageIcon left = new ImageIcon("left.png");
@@ -21,27 +40,43 @@ public class SnakePanel extends JPanel implements KeyListener,ActionListener{
 	ImageIcon title = new ImageIcon("title.jpg");
 	ImageIcon body = new ImageIcon("body.png");
 	ImageIcon food = new ImageIcon("food.png");
-	
-	//ÉßµÄÊı¾İ½á¹¹Éè¼Æ
+
+	// ï¿½ßµï¿½ï¿½ï¿½ï¿½İ½á¹¹ï¿½ï¿½ï¿½
 	int[] snakex = new int[750];
 	int[] snakey = new int[750];
 	int len = 3;
-	String direction = "R";//RÓÒL×óUÉÏDÏÂ
-	
-	//Ê³ÎïÉú³É
+	String direction = "R"; // Rï¿½ï¿½Lï¿½ï¿½Uï¿½ï¿½Dï¿½ï¿½
+
+	// Ê³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	Random r = new Random();
-	int foodx = r.nextInt(34)*25+25; // 34¸ö¸ñ×Ó£¬Ò»¸ö¸ñ×Ó25ÅÅÏñËØ£¬»¹ÓĞ25ÏñËØ¿Õ°×
-	int foody = r.nextInt(24)*25+75; // 24¸ö¸ñ×Ó£¬Ò»¸ö¸ñ×Ó25ÅÅÏñËØ£¬»¹ÓĞ75ÏñËØ¿Õ°×
-	
-	//ÓÎÏ·ÊÇ·ñ¿ªÊ¼
+	int foodx = r.nextInt(34) * 25 + 25; // 34ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½25ï¿½ï¿½ï¿½ï¿½ï¿½Ø£ï¿½ï¿½ï¿½ï¿½ï¿½25ï¿½ï¿½ï¿½Ø¿Õ°ï¿½
+	int foody = r.nextInt(24) * 25 + 75; // 24ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½25ï¿½ï¿½ï¿½ï¿½ï¿½Ø£ï¿½ï¿½ï¿½ï¿½ï¿½75ï¿½ï¿½ï¿½Ø¿Õ°ï¿½
+
+	// ï¿½ï¿½Ï·ï¿½Ç·ï¿½Ê¼
 	boolean isStarted = false;
-	
-	//ÓÎÏ·ÊÇ·ñÊ§°Ü
+
+	// ï¿½ï¿½Ï·ï¿½Ç·ï¿½Ê§ï¿½ï¿½
 	boolean isFaild = false;
 
-	
-	//	³õÊ¼»¯Éß
-	public void initSnake(){
+	// ï¿½Â¹ï¿½ï¿½ï¿½Ï¢
+	int level = 1; // ï¿½ï¿½Ç°ï¿½Â¹ï¿½
+	int targetFoodCount; // ï¿½Â¹ï¿½ï¿½ï¿½ï¿½ï¿½Ê³ï¿½ïµ½ï¿½ï¿½
+	int currentFoodCount = 0; // ï¿½ï¿½Ç°ï¿½Â¹ï¿½Ê³ï¿½ïµ½ï¿½ï¿½
+	int countdown; // ï¿½Â¹ï¿½ï¿½ï¿½ï¿½ï¿½Ê±
+	int baseTime = 30; // ï¿½Ó²ï¿½Ê±ï¿½ï¿½
+	int timeIncrementPerLevel = 5; // Ã¿ï¿½ï¿½Ê±ï¿½ï¿½Ê±ï¿½äµ¥ï¿½ï¿½
+	int timeIncrementPerFood = 2; // Ã¿Ê³ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½äµ¥ï¿½ï¿½
+
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
+	int score = 0; // ï¿½ï¿½ï¿½ï¿½ï¿½
+	int scorePerFood = 10; // Ã¿Ê³ï¿½ï¿½Ò»ï¿½ï¿½Ä³É¼ï¿½
+
+	// ï¿½Â¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	boolean isLevelComplete = false; // ï¿½Â¹ï¿½ï¿½Ç·ï¿½Í¨ï¿½ï¿½ï¿½ï¿½
+	boolean isShowLevelDialog = false; // ï¿½Ç·ï¿½ï¿½Ê¾ï¿½Â¹ï¿½ï¿½ï¿½ï¿½ï¿½Ô»ï¿½ï¿½ï¿½
+
+	// ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
+	public void initSnake() {
 		isStarted = false;
 		isFaild = false;
 		len = 3;
@@ -52,140 +87,245 @@ public class SnakePanel extends JPanel implements KeyListener,ActionListener{
 		snakey[1] = 100;
 		snakex[2] = 50;
 		snakey[2] = 100;
+
+		// ï¿½Â¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		initLevel();
 	}
+
+	// ï¿½Â¹ï¿½Ê¼ï¿½ï¿½
+	public void initLevel() {
+		level = 1;
+		score = 0;
+		currentFoodCount = 0;
+		targetFoodCount = 5 + (level - 1) * 3; // 1ï¿½ï¿½5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½+3
+		countdown = baseTime + (level - 1) * timeIncrementPerLevel; // 1ï¿½ï¿½30sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½+5s
+		isLevelComplete = false;
+		isShowLevelDialog = false;
+
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+		timer.setDelay(150 - (level - 1) * 15); // Ã¿ï¿½ï¿½Ê¹ï¿½ï¿½Ù¶ï¿½Ê¹ï¿½ï¿½15ms
+
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		countdownTimer.start();
+	}
+
+	// ï¿½Â¹ï¿½ï¿½ï¿½
+	public void nextLevel() {
+		level++;
+		currentFoodCount = 0;
+		targetFoodCount = 5 + (level - 1) * 3; // 1ï¿½ï¿½5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½+3
+		countdown = baseTime + (level - 1) * timeIncrementPerLevel; // 1ï¿½ï¿½30sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½+5s
+		isLevelComplete = false;
+		isShowLevelDialog = false;
+
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+		timer.setDelay(150 - (level - 1) * 15); // Ã¿ï¿½ï¿½Ê¹ï¿½ï¿½Ù¶ï¿½Ê¹ï¿½ï¿½15ms
+
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		countdownTimer.start();
+	}
+
 	public SnakePanel() {
 		this.setFocusable(true);
-		initSnake(); //·ÅÖÃ¾²Ì¬Éß£»
-		this.addKeyListener(this);//Ìí¼Ó¼üÅÌ¼àÌı½Ó¿Ú
+		initSnake(); // ï¿½ï¿½ï¿½Ã¾ï¿½Ì¬ï¿½ß£ï¿½
+		this.addKeyListener(this);// ï¿½ï¿½ï¿½Ó¼ï¿½ï¿½Ì¼ï¿½ï¿½ï¿½ï¿½Ó¿ï¿½
 		timer.start();
+		countdownTimer.start();
 	}
-	//ÉèÖÃÉßÒÆ¶¯ËÙ¶È
+
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¶ï¿½ï¿½Ù¶ï¿½
 	Timer timer = new Timer(150, this);
-	
-	public void paint(Graphics g){
-		//ÉèÖÃ±³¾°ºÚÉ«
+	Timer countdownTimer = new Timer(1000, this);
+
+	public void paint(Graphics g) {
+		// ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ï¿½ï¿½ï¿½É«
 		this.setBackground(Color.black);
 		g.fillRect(25, 75, 850, 600);
-		//ÉèÖÃ±êÌâ
+		// ï¿½ï¿½ï¿½Ã±ï¿½ï¿½ï¿½
 		title.paintIcon(this, g, 25, 11);
-		
-		//»­ÉßÍ·
-		if(direction.equals("R")){
+
+		// ï¿½Â¹ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½Ó´ï¿½ - ï¿½Ò±ï¿½
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("arial", Font.BOLD, 18));
+		g.drawString("Level: " + level, 700, 40);
+		g.drawString("Food: " + currentFoodCount + "/" + targetFoodCount, 700, 60);
+		g.drawString("Time: " + countdown + "s", 700, 80);
+
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¼ï¿½
+		g.drawString("Score: " + score, 25, 40);
+
+		// ï¿½ï¿½ï¿½ï¿½Í·
+		if (direction.equals("R")) {
 			right.paintIcon(this, g, snakex[0], snakey[0]);
-		}else if(direction.equals("L")){
+		} else if (direction.equals("L")) {
 			left.paintIcon(this, g, snakex[0], snakey[0]);
-		}else if(direction.equals("U")){
+		} else if (direction.equals("U")) {
 			up.paintIcon(this, g, snakex[0], snakey[0]);
-		}else if(direction.equals("D")){
+		} else if (direction.equals("D")) {
 			down.paintIcon(this, g, snakex[0], snakey[0]);
 		}
-		//»­ÉßÉí
-		for(int i=1;i<len;i++){
-			body.paintIcon(this, g, snakex[i],snakey[i]);
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		for (int i = 1; i < len; i++) {
+			body.paintIcon(this, g, snakex[i], snakey[i]);
 		}
-		
-		//»­¿ªÊ¼ÌáÊ¾Óï
-		if(!isStarted){
+
+		// ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ê¾ï¿½ï¿½
+		if (!isStarted) {
 			g.setColor(Color.WHITE);
-			g.setFont(new Font("arial",Font.BOLD,30));
+			g.setFont(new Font("arial", Font.BOLD, 30));
 			g.drawString("Press Space to Start or Pause", 230, 350);
 		}
-		//»­Ê§°ÜÌáÊ¾Óï
+		// ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½
 		if (isFaild) {
 			g.setColor(Color.WHITE);
-			g.setFont(new Font("arial",Font.BOLD,30));
-			g.drawString("Game Over,Press Space to Start", 230, 350);
+			g.setFont(new Font("arial", Font.BOLD, 30));
+			g.fillRect(300, 250, 350, 200);
+			g.setColor(Color.BLACK);
+			g.drawString("Game Over!", 380, 320);
+			g.drawString("Score: " + score, 390, 360);
+			g.drawString("Space to Retry", 360, 400);
 		}
-		
-		//»­Ê³Îï
+
+		// ï¿½Â¹ï¿½Í¨ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½
+		if (isShowLevelDialog && isLevelComplete) {
+			g.setColor(Color.WHITE);
+			g.setFont(new Font("arial", Font.BOLD, 30));
+			g.fillRect(300, 250, 350, 200);
+			g.setColor(Color.BLACK);
+			g.drawString("Level " + level + " Complete!", 320, 320);
+			g.drawString("Next Level: " + (level + 1), 330, 360);
+			g.drawString("Space to Continue", 320, 400);
+		}
+
+		// ï¿½ï¿½Ê³ï¿½ï¿½
 		food.paintIcon(this, g, foodx, foody);
-		
-		
+	}
+
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ó¦ï¿½Ã·ï¿½ï¿½ï¿½
+	public void handleCountdown() {
+		if (isStarted && !isFaild && !isLevelComplete) {
+			countdown--;
+			if (countdown <= 0) {
+				isFaild = true;
+				countdownTimer.stop();
+			}
+		}
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	//¼àÌı°´¼ü
+
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	@Override
 	public void keyPressed(KeyEvent e) {
 		int keyCode = e.getKeyCode();
-		//ÊµÏÖ¿Õ¸ñÔİÍ£ ¼ÌĞø
-		if(keyCode == KeyEvent.VK_SPACE){
-			if(isFaild){
+		// Êµï¿½Ö¿Õ¸ï¿½ï¿½ï¿½Í£ ï¿½ï¿½ï¿½ï¿½
+		if (keyCode == KeyEvent.VK_SPACE) {
+			if (isFaild) {
+				// æ¸¸æˆå¤±è´¥æ—¶åˆ é™¤å­˜æ¡£
+				deleteSaveFile();
 				initSnake();
+			} else if (isShowLevelDialog && isLevelComplete) {
+				// ï¿½Â¹ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¹ï¿½
+				deleteSaveFile();
+				nextLevel();
+			} else {
+				// æš‚åœ/ç»§ç»­æ¸¸æˆ
+				isStarted = !isStarted;
+
+				if (!isStarted) {
+					// æš‚åœæ—¶è‡ªåŠ¨å­˜æ¡£
+					saveGame();
+				}
 			}
-			else{
-			isStarted = !isStarted;
-			}
-//			repaint();
-		}//ÊµÏÖ×ªÏò
-		else if(keyCode == KeyEvent.VK_UP && !direction.equals("D")){
-			direction="U";
-		}else if(keyCode == KeyEvent.VK_DOWN && !direction.equals("U")){
-			direction="D";
-		}else if(keyCode == KeyEvent.VK_LEFT && !direction.equals("R")){
-			direction="L";
-		}else if(keyCode == KeyEvent.VK_RIGHT && !direction.equals("L")){
-			direction="R";
+			// repaint();
+		} // Êµï¿½ï¿½×ªï¿½ï¿½
+		else if (keyCode == KeyEvent.VK_UP && !direction.equals("D")) {
+			direction = "U";
+		} else if (keyCode == KeyEvent.VK_DOWN && !direction.equals("U")) {
+			direction = "D";
+		} else if (keyCode == KeyEvent.VK_LEFT && !direction.equals("R")) {
+			direction = "L";
+		} else if (keyCode == KeyEvent.VK_RIGHT && !direction.equals("L")) {
+			direction = "R";
 		}
-		
-		
+
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub
-		
+
 	}
+
 	/*
-	 * 1.¶¨¸öÄÖÖÓ
-	 * 2.ÉßÒÆ¶¯
-	 * 3.ÖØ»­Ò»´ÎÉß
+	 * 1.ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	 * 2.ï¿½ï¿½ï¿½Æ¶ï¿½
+	 * 3.ï¿½Ø»ï¿½Ò»ï¿½ï¿½ï¿½ï¿½
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
+		// ï¿½ï¿½ï¿½ï¿½ï¿½Ê±Ê±ï¿½Ó¦ï¿½Ã·ï¿½ï¿½ï¿½
+		if (e.getSource() == countdownTimer) {
+			handleCountdown();
+		}
+
 		timer.start();
-		
-		if(isStarted && !isFaild){
-			//ÒÆ¶¯ÉíÌå
-			for(int i=len;i>0;i--){
-				snakex[i] = snakex[i-1];
-				snakey[i] = snakey[i-1];
+
+		if (isStarted && !isFaild && !isLevelComplete) {
+			// ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½
+			for (int i = len; i > 0; i--) {
+				snakex[i] = snakex[i - 1];
+				snakey[i] = snakey[i - 1];
 			}
-			//Í·ÒÆ¶¯
-			if(direction.equals("R")){
-				//ºá×ø±ê+25
-				snakex[0] = snakex[0]+25;
-				if(snakex[0]>850) snakex[0] = 25;
-				
-				
-			}else if(direction.equals("L")){
-				//ºá×ø±ê-25
-				snakex[0] = snakex[0]-25;
-				if(snakex[0]<25) snakex[0] = 850;
-			}else if(direction.equals("U")){
-				//×İ×ø±ê-25
-				snakey[0] = snakey[0]-25;
-				if(snakey[0]<75) snakey[0] = 650;
-			}else if(direction.equals("D")){
-				//×İ×ø±ê+25
-				snakey[0] = snakey[0]+25;
-				if(snakey[0]>650) snakey[0] = 75;
+			// Í·ï¿½Æ¶ï¿½
+			if (direction.equals("R")) {
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½+25
+				snakex[0] = snakex[0] + 25;
+				if (snakex[0] > 850)
+					snakex[0] = 25;
+
+			} else if (direction.equals("L")) {
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½-25
+				snakex[0] = snakex[0] - 25;
+				if (snakex[0] < 25)
+					snakex[0] = 850;
+			} else if (direction.equals("U")) {
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½-25
+				snakey[0] = snakey[0] - 25;
+				if (snakey[0] < 75)
+					snakey[0] = 650;
+			} else if (direction.equals("D")) {
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½+25
+				snakey[0] = snakey[0] + 25;
+				if (snakey[0] > 650)
+					snakey[0] = 75;
 			}
-			//³ÔÊ³Îï
-			if(snakex[0] == foodx && snakey[0] == foody){
+			// ï¿½ï¿½Ê³ï¿½ï¿½
+			if (snakex[0] == foodx && snakey[0] == foody) {
 				len++;
-				foodx = r.nextInt(34)*25+25;
-				foody = r.nextInt(24)*25+75;
+				currentFoodCount++;
+				score += scorePerFood;
+				countdown += timeIncrementPerFood; // Ã¿Ê³ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±2s
+
+				foodx = r.nextInt(34) * 25 + 25;
+				foody = r.nextInt(24) * 25 + 75;
+
+				// ï¿½Ğ¶ï¿½ï¿½Â¹ï¿½ï¿½Ç·ï¿½Í¨ï¿½ï¿½
+				if (currentFoodCount >= targetFoodCount) {
+					isLevelComplete = true;
+					isShowLevelDialog = true;
+					countdownTimer.stop();
+				}
 			}
-			//ÅĞ¶ÏÓÎÏ·Ê§°Ü
-			for(int i=1;i<len;i++){
-				if(snakex[0] == snakex[i] && snakey[0] == snakey[i]){
+			// ï¿½Ğ¶ï¿½ï¿½ï¿½Ï·Ê§ï¿½ï¿½
+			for (int i = 1; i < len; i++) {
+				if (snakex[0] == snakex[i] && snakey[0] == snakey[i]) {
 					isFaild = true;
+					countdownTimer.stop();
 				}
 			}
 		}
